@@ -133,6 +133,11 @@ filter spopen(const char* command, int cloexec)
   return flt;
 }
 
+int spfinalize(filter flt)
+{
+  return shutdown(flt.sock, SHUT_WR);
+}
+
 int spclose(filter flt)
 {
   int found = 0;

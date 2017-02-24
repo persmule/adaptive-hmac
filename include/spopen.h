@@ -40,6 +40,9 @@ typedef struct filter {
 }filter;
 
 extern filter spopen(const char* command, int cloexec);
+
+extern int spfinalize(filter flt); //finalize write to flt
+
 extern int spclose(filter flt); //returns the return value of the child process
 
 #define FLT_INVALID (filter){ -1, -1 }

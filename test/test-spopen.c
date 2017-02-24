@@ -1,6 +1,6 @@
 /* 
  * test-spopen.c
- * Test and example for spopen() and spclose().
+ * Test and demo program for spopen() and spclose().
  * 
  * Copyright (c) 2017 Persmule. All Rights Reserved.
  *
@@ -21,11 +21,14 @@
  */
 
 #include <stdio.h>
+#include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
 #include <signal.h>
 #include <sys/socket.h>
+#include <errno.h>
+#include <fcntl.h>
 #include "spopen.h"
 
 int main(int argc, char** argv)
@@ -37,7 +40,8 @@ int main(int argc, char** argv)
   size_t cmdlen = 0;
   char* cmd = NULL;
   char ibuf[64], obuf[64];
-  size_t isize = 0, osize = 0;
+  size_t isize = 0;
+  ptrdiff_t osize = 0;
 
   //concatenate all argvs to a single string for spopen()
   {
@@ -63,7 +67,7 @@ int main(int argc, char** argv)
       assert(finger == cmd + cmdlen);
       assert(cmd[cmdlen - 1] == ' ');
     }
-    cmd[cmdlen] = '\0';
+    cmd[cmdlen - 1] = '\0';
   }
   filter flt = spopen(cmd, 1);
   if ((flt.sock == -1)
@@ -74,10 +78,12 @@ int main(int argc, char** argv)
 
   free(cmd);
   
-  FILE* rfp = fdopen(dup(flt.sock), "rb");
+  //FILE* rfp = fdopen(dup(flt.sock), "rb");
+  fd_t rfd = dup(flt.sock);
+  fcntl(rfd, F_SETFL, O_NONBLOCK);
   FILE* wfp = fdopen(dup(flt.sock), "wb");
 
-  if (!(rfp && wfp)) {
+  if (!((rfd > 0) && wfp)) {
     fputs("Error: unable to perform fdopen! killing child process...\n",
 	  stderr);
     kill(flt.child, SIGKILL);
@@ -86,28 +92,48 @@ int main(int argc, char** argv)
   }
     
   do {
-    isize = fread(ibuf, sizeof(char), sizeof(ibuf), stdin);
-    fwrite(ibuf, sizeof(char), isize, wfp);
-
-    if (isize < sizeof(ibuf)) {
-      assert(feof(stdin) && !ferror(stdin));
-      fclose(wfp);
-      shutdown(flt.sock, SHUT_WR);
-      break;
+    if (!feof(stdin)) {
+      isize = fread(ibuf, sizeof(char), sizeof(ibuf), stdin);
+      fwrite(ibuf, sizeof(char), isize, wfp);
+      
+    
+      if (isize < sizeof(ibuf)) {
+	assert(feof(stdin) && !ferror(stdin));
+	fclose(wfp);
+	wfp = NULL;
+	spfinalize(flt);//make stdin of child reach EOF
+      }
     }
-    osize = fread(obuf, sizeof(char), sizeof(obuf), rfp);
-    fwrite(obuf, sizeof(char), osize, stdout);
-  } while (osize == sizeof(obuf));
+
+    do {
+      osize = read(rfd, obuf, sizeof(obuf));
+      if (osize > 0) {
+	//process data output by child, and repeat for more output.
+	fwrite(obuf, sizeof(char), osize, stdout);
+	continue;
+      } else if (errno == EAGAIN) {
+	//child has nothing to output, feed more data.
+	break;
+      } else {
+	  perror("Error: fail to read from child process.");
+	  if (wfp) {
+	    fclose(wfp);
+	    wfp = NULL;
+	  }
+	  close(rfd);
+	  kill(flt.child, SIGKILL);
+	  spclose(flt);
+	  return -1;
+      }
+      //EOF of rfd has reached.
+    } while (osize != 0); //EOF of rfd
+  } while (osize != 0);
 
   //read remaining data until eof.
-  do {
-    osize = fread(obuf, sizeof(char), sizeof(obuf), rfp);
-    fwrite(obuf, sizeof(char), osize, stdout);
-  } while (osize == sizeof(obuf));
 
-  assert(feof(rfp) && !ferror(stdout));
+  assert(!ferror(stdout));
 
-  fclose(rfp);
+  close(rfd);
 
   return spclose(flt);
 }
