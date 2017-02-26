@@ -69,25 +69,25 @@ int main(int argc, char** argv)
     }
     cmd[cmdlen - 1] = '\0';
   }
-  filter flt = spopen(cmd, 1);
-  if ((flt.sock == -1)
-      ||(flt.child == -1)) {
+  SP sp = spopen(cmd, 1);
+  if ((sp.sock == -1)
+      ||(sp.child == -1)) {
     fputs("Error: unable to perform spopen!\n", stderr);
     return -1;
   }
 
   free(cmd);
   
-  //FILE* rfp = fdopen(dup(flt.sock), "rb");
-  fd_t rfd = dup(flt.sock);
+  //FILE* rfp = fdopen(dup(sp.sock), "rb");
+  fd_t rfd = dup(sp.sock);
   fcntl(rfd, F_SETFL, O_NONBLOCK);
-  FILE* wfp = fdopen(dup(flt.sock), "wb");
+  FILE* wfp = fdopen(dup(sp.sock), "wb");
 
   if (!((rfd > 0) && wfp)) {
     fputs("Error: unable to perform fdopen! killing child process...\n",
 	  stderr);
-    kill(flt.child, SIGKILL);
-    spclose(flt);
+    kill(sp.child, SIGKILL);
+    spclose(sp);
     return -1;
   }
     
@@ -101,7 +101,7 @@ int main(int argc, char** argv)
 	assert(feof(stdin) && !ferror(stdin));
 	fclose(wfp);
 	wfp = NULL;
-	spfinalize(flt);//make stdin of child reach EOF
+	spfinalize(sp);//make stdin of child reach EOF
       }
     }
 
@@ -121,8 +121,8 @@ int main(int argc, char** argv)
 	    wfp = NULL;
 	  }
 	  close(rfd);
-	  kill(flt.child, SIGKILL);
-	  spclose(flt);
+	  kill(sp.child, SIGKILL);
+	  spclose(sp);
 	  return -1;
       }
       //EOF of rfd has reached.
@@ -135,5 +135,5 @@ int main(int argc, char** argv)
 
   close(rfd);
 
-  return spclose(flt);
+  return spclose(sp);
 }

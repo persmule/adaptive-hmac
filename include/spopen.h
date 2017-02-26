@@ -34,18 +34,18 @@ extern "C" {
 
 typedef int fd_t;
 
-typedef struct filter {
+typedef struct SP {
   pid_t child;
   fd_t sock;
-}filter;
+}SP;
 
-extern filter spopen(const char* command, int cloexec);
+extern SP spopen(const char* command, int cloexec);
 
-extern int spfinalize(filter flt); //finalize write to flt
+extern int spfinalize(SP sp); //finalize write to sp
 
-extern int spclose(filter flt); //returns the return value of the child process
+extern int spclose(SP sp); //returns the return value of the child process
 
-#define FLT_INVALID (filter){ -1, -1 }
+#define SP_INVALID (SP){ -1, -1 }
 
 #if 0 //in order to supress unnecessary indentation
 {
