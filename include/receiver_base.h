@@ -1,6 +1,6 @@
 /* 
- * parser_base.h
- * abstract interface for parser.
+ * receiver_base.h
+ * abstract interface for all receivers.
  * 
  * Copyright (c) 2017 Persmule. All Rights Reserved.
  *

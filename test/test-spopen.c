@@ -29,6 +29,8 @@
 #include <sys/socket.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <stdbool.h>
+
 #include "spopen.h"
 
 int main(int argc, char** argv)
@@ -69,7 +71,7 @@ int main(int argc, char** argv)
     }
     cmd[cmdlen - 1] = '\0';
   }
-  SP sp = spopen(cmd, 1);
+  SP sp = spopen(cmd, true);
   if ((sp.sock == -1)
       ||(sp.child == -1)) {
     fputs("Error: unable to perform spopen!\n", stderr);

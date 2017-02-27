@@ -22,6 +22,9 @@
 
 #include "filter.h"
 #include <errno.h>
+#include <stdlib.h>
+#include <fcntl.h>
+#include <signal.h>
 
 filter* FLT_new_sp(SP sp,
 		   void* receiver,
@@ -35,7 +38,7 @@ filter* FLT_new_sp(SP sp,
   
   filter* newflt = (filter*)calloc(1, sizeof(filter));
 
-  if(!filter)
+  if(!newflt)
     return NULL;
 
   newflt->sp = sp;
@@ -55,7 +58,7 @@ filter* FLT_new_sp(SP sp,
   return newflt;
 }
 
-int FLT_free(filter* flt)
+int FLT_close(filter* flt)
 {
   if (!(flt
 	&& FLT_is_sane(flt)))
@@ -93,13 +96,15 @@ int FLT_feed(filter* flt,
     spfinalize(flt->sp);//make stdin of child reach EOF
   }
 
+  ptrdiff_t osize = 0;
+  
   do {
     size_t asize = 0;
+    
     void* buf = flt->rvt->read_begin(flt->receiver, &asize);
-    if (!(buf
-	  && asize))
+    if (!(buf && asize))
       goto onerr;
-    ptrdiff_t osize = read(rfd, buf, asize);
+    osize = read(flt->rfd, buf, asize);
     if (osize > 0) {
       //read successfully complete, commit data to receiver.
       flt->rvt->read_end(flt->receiver, osize);
@@ -108,7 +113,10 @@ int FLT_feed(filter* flt,
     } else if (errno == EAGAIN) {
       //child has nothing to output, cancel this reading.
       flt->rvt->read_end(flt->receiver, 0);
-      break;
+      if(finalize)
+	continue;
+      else
+	break;
     } else {
       goto onerr;
     }

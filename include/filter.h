@@ -24,10 +24,11 @@
 #define _FILTER_H_
 #ifdef __cplusplus
 extern "C" {
-#endif
-#if 0 //in order to supress unnecessary indentation
+# if 0 //in order to supress unnecessary indentation
 }
+# endif
 #endif
+
 
 #include "spopen.h"
 #include "receiver_base.h"
@@ -69,7 +70,7 @@ static inline int FLT_geterr(const filter* flt)
   return flt->err;
 }
 
-int FLT_free(filter* flt);
+int FLT_close(filter* flt);
 
 /*
  * Feed data to flt, and optionally perform finalization. 
@@ -78,14 +79,15 @@ int FLT_free(filter* flt);
  * actual output from child occurs, or -1 when on error.
  */
 int FLT_feed(filter* flt,
-		   const void* data,
-		   size_t datalen,
-		   int finalize);
+	     const void* data,
+	     size_t datalen,
+	     int finalize);
 
-#if 0 //in order to supress unnecessary indentation
-{
-#endif
+
 #ifdef __cplusplus
+# if 0 //in order to supress unnecessary indentation
+{
+# endif
 }
 #endif
 #endif
