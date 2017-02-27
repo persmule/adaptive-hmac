@@ -25,10 +25,11 @@
 #define _SPOPEN_H_
 #ifdef __cplusplus
 extern "C" {
-#endif
-#if 0 //in order to supress unnecessary indentation
+# if 0 //in order to supress unnecessary indentation
 }
+# endif
 #endif
+
 
 #include <unistd.h>
 
@@ -47,10 +48,11 @@ extern int spclose(SP sp); //returns the return value of the child process
 
 #define SP_INVALID (SP){ -1, -1 }
 
-#if 0 //in order to supress unnecessary indentation
-{
-#endif
+
 #ifdef __cplusplus
+# if 0 //in order to supress unnecessary indentation
+{
+# endif
 }
 #endif
 #endif

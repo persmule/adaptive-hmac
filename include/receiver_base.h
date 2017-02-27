@@ -24,10 +24,11 @@
 #define _RECEIVER_BASE_H_
 #ifdef __cplusplus
 extern "C" {
-#endif
-#if 0 //in order to supress unnecessary indentation
+# if 0 //in order to supress unnecessary indentation
 }
+# endif
 #endif
+
 
 #include <stddef.h>
 
@@ -51,10 +52,10 @@ typedef struct receiver_vtable {
   receiver_read_end* read_end;
 }receiver_vtable;
 
-#if 0 //in order to supress unnecessary indentation
-{
-#endif
 #ifdef __cplusplus
+# if 0 //in order to supress unnecessary indentation
+{
+# endif
 }
 #endif
 #endif
